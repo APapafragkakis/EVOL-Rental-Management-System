@@ -79,4 +79,4 @@ The system runs as a CLI application. On startup it presents a menu:
 - If a vehicle is involved in an accident without insurance, the customer is charged 3x the rental cost
 - Repairs take 3 days, maintenance takes 1 day — vehicle is unavailable during this time
 
----
+
