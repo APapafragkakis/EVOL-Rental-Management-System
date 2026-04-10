@@ -80,9 +80,3 @@ The system runs as a CLI application. On startup it presents a menu:
 - Repairs take 3 days, maintenance takes 1 day — vehicle is unavailable during this time
 
 ---
-
-## What could be improved
-
-- Web interface instead of CLI
-- Separation between admin actions (fleet management) and customer actions (rental)
-- Online payment integration
