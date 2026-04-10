@@ -1,0 +1,109 @@
+--Κατάσταση διαθέσιμων ή ενοικιασμένων οχημάτων ανά κατηγορία
+--Car
+SELECT r.RegisterationNumber,
+       v.Brand,
+       v.Model,
+       c.CarType,
+       v.IsRented,
+       v.needMaintenance,
+       v.needRepair
+FROM Vehicle v
+JOIN Car c ON v.VehicleID = c.VehicleID
+JOIN Registered_Vehicle r ON v.VehicleID = r.VehicleID
+
+
+--Motorbike
+SELECT r.RegisterationNumber,
+       v.Brand,
+       v.Model,
+       v.IsRented,
+       v.needMaintenance,
+       v.needRepair
+FROM Vehicle
+JOIN Registered_Vehicle r ON v.VehicleID = r.VehicleID
+WHERE v.VehicleType = 'Motorbike';
+
+
+--Scooter
+SELECT u.UniqueNumber,
+       v.Brand,
+       v.Model,
+       v.IsRented,
+       v.needMaintenance,
+       v.needRepair
+FROM Vehicle v
+JOIN Unregistered_Vehicle u ON v.VehicleID = u.VehicleID
+WHERE v.VehicleType = 'Scooter';
+
+
+--Bicycle
+SELECT u.UniqueNumber,
+       v.Brand,
+       v.Model,
+       v.IsRented,
+       v.needMaintenance,
+       v.needRepair
+FROM Vehicle v
+JOIN Unregistered_Vehicle u ON v.VehicleID = u.VehicleID
+WHERE v.VehicleType = 'Bicycle';
+
+
+-- Κατάσταση ενοικιάσεων ανά χρονική περίοδο
+SELECT
+    r.RentalID,
+    r.ReturnDateTime,
+    r.DeliveryDateTime,
+    CASE
+        WHEN r.hasReturned = TRUE THEN 'Returned'
+        ELSE 'Not Returned'
+    END AS RentalStatus
+FROM Rental r
+WHERE r.DeliveryDateTime BETWEEN :start_date AND :end_date;
+
+
+--Μέγιστη, ελάχιστη και μέση διάρκεια ενοικίασης ανά κατηγορία οχήματος
+SELECT
+    v.VehicleType,
+    MAX(TIMESTAMPDIFF(HOUR, r.DeliveryDateTime, r.ReturnDateTime)) AS MaxDuration,
+    MIN(TIMESTAMPDIFF(HOUR, r.DeliveryDateTime, r.ReturnDateTime)) AS MinDuration,
+    AVG(TIMESTAMPDIFF(HOUR, r.DeliveryDateTime, r.ReturnDateTime)) AS AvgDuration
+FROM Rental r
+JOIN Vehicle v ON r.VehicleID = v.VehicleID
+GROUP BY v.VehicleType;
+
+
+--Έσοδα από ενοικίαση ανά χρονική περίοδο και ανά κατηγορία οχήματος
+SELECT
+    v.VehicleType,
+    DATE_FORMAT(r.ReturnDateTime, '%Y-%m') AS TimePeriod,
+    SUM(p.Amount) AS RentalIncome
+FROM Rental r
+JOIN Payment p ON r.RentalID = p.RentalID
+JOIN Vehicle v ON r.VehicleID = v.VehicleID
+    AND v.VehicleType = :vehicle_type
+GROUP BY v.VehicleType, TimePeriod;
+
+
+--Συνολικά έξοδα συντήρησης και επισκευής οχημάτων ανά χρονική περίοδο
+SELECT
+    v.VehicleType,
+    DATE_FORMAT(s.EnterDate, '%Y-%m') AS TimePeriod,
+    SUM(s.Cost) AS TotalCost
+FROM Service s
+JOIN Vehicle v ON s.VehicleID = v.VehicleID
+WHERE s.EnterDate BETWEEN :start_date AND :end_date
+    AND v.VehicleType = :vehicle_type
+GROUP BY v.VehicleType;
+
+
+--Δημοφιλέστερο όχημα ανά κατηγορία
+SELECT
+    v.VehicleType,
+    v.Brand,
+    v.Model,
+    COUNT(*) AS RentalCount
+FROM Rental r
+JOIN Vehicle v ON r.VehicleID = v.VehicleID
+GROUP BY v.VehicleType, v.Brand, v.Model
+ORDER BY RentalCount DESC
+LIMIT 1;

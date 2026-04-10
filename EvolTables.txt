@@ -1,0 +1,105 @@
+CREATE TABLE Customer (
+    TIN CHAR(9) NOT NULL PRIMARY KEY CHECK (TIN REGEXP '^[0-9]{9}$'),
+    FirstName VARCHAR(255) NOT NULL,
+    LastName VARCHAR(255) NOT NULL,
+    City VARCHAR(255) NOT NULL,
+    Street VARCHAR(255) NOT NULL,
+    HouseNumber CHAR(3) NOT NULL CHECK (HouseNumber REGEXP '^[0-9]{3}$'),
+    PostalCode CHAR(5) NOT NULL CHECK (PostalCode REGEXP '^[0-9]{5}$'),
+	BirthDate DATE NOT NULL
+);
+
+CREATE TABLE Credit_Card (
+    CreditCardNumber CHAR(16) NOT NULL PRIMARY KEY CHECK (CreditCardNumber REGEXP '^[0-9]{16}$'),
+    ExpirationDate CHAR(5) NOT NULL CHECK (ExpirationDate REGEXP '^(0[1-9]|1[0-2])\/[0-9]{2}$'),
+    CCV CHAR(3) NOT NULL CHECK (CCV REGEXP '^[0-9]{3}$'),
+	TIN CHAR(9) NOT NULL,
+	FOREIGN KEY (TIN) REFERENCES Customer(TIN)
+);
+
+CREATE TABLE Vehicle_Type_Brand_Model (
+	VehicleType VARCHAR(255) NOT NULL CHECK (VehicleType IN ('Car', 'Motorbike', 'Scooter', 'Bicycle')),
+	Brand VARCHAR(255) NOT NULL,
+	Model VARCHAR(255) NOT NULL,
+    PRIMARY KEY (VehicleType, Brand, Model),
+	DailyRentalCost DECIMAL(10, 2) NOT NULL CHECK (DailyRentalCost > 0),
+	DailyInsuranceCost DECIMAL(10, 2) NOT NULL CHECK (DailyInsuranceCost > 0),
+	HourlyDelayedCost DECIMAL(10, 2) NOT NULL CHECK (HourlyDelayedCost > 0),
+	RangeInKilometers INT NOT NULL CHECK (RangeInKilometers > 0)
+);
+
+CREATE TABLE Vehicle (
+    VehicleID INT NOT NULL PRIMARY KEY,
+	VehicleType VARCHAR(255) NOT NULL CHECK (VehicleType IN ('Car', 'Motorbike', 'Scooter', 'Bicycle')),
+	Brand VARCHAR(255) NOT NULL,
+	Model VARCHAR(255) NOT NULL,
+    Color VARCHAR(255) NOT NULL,
+    needMaintenance BOOLEAN NOT NULL DEFAULT FALSE,
+    needRepair BOOLEAN NOT NULL DEFAULT FALSE,
+    IsRented BOOLEAN NOT NULL DEFAULT FALSE,
+	FOREIGN KEY (VehicleType, Brand, Model) REFERENCES Vehicle_Type_Brand_Model(VehicleType, Brand, Model)
+);
+
+CREATE TABLE Unregistered_Vehicle (
+    VehicleID INT NOT NULL PRIMARY KEY REFERENCES Vehicle(VehicleID),
+	UniqueNumber CHAR(5) NOT NULL UNIQUE CHECK (UniqueNumber REGEXP '^[0-9]{5}$'),
+	FOREIGN KEY (VehicleID) REFERENCES Vehicle(VehicleID)
+);
+
+CREATE TABLE Registered_Vehicle (
+	VehicleID INT NOT NULL PRIMARY KEY REFERENCES Vehicle(VehicleID),
+    RegisterationNumber CHAR(8) NOT NULL UNIQUE CHECK (RegisterationNumber REGEXP '^[A-Z]{3}-[0-9]{4}$'),
+	FOREIGN KEY (VehicleID) REFERENCES Vehicle(VehicleID)
+);
+
+
+CREATE TABLE Car (
+	VehicleID INT NOT NULL PRIMARY KEY REFERENCES Vehicle(VehicleID),
+    CarType VARCHAR(255) NOT NULL,
+    NumberOfPassengers INT NOT NULL CHECK (NumberOfPassengers > 0)
+);
+
+CREATE TABLE Service (
+    ServiceID INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+    Cost DECIMAL(10, 2) NOT NULL CHECK (Cost >= 0),
+    EnterDate DATE NOT NULL,
+    IsComplete BOOLEAN NOT NULL DEFAULT FALSE,
+	IsRegistratedVehicle BOOLEAN NOT NULL,
+    ServiceType VARCHAR(11) NOT NULL CHECK (ServiceType IN ('Maintenance', 'Repair')),
+	VehicleID INT NOT NULL,
+	FOREIGN KEY (VehicleID) REFERENCES Vehicle(VehicleID)
+);
+
+CREATE TABLE Rental (
+    RentalID INT NOT NULL PRIMARY KEY,
+    ReturnDateTime DATETIME NOT NULL,
+    ReturnedDateTime DATETIME DEFAULT NULL,
+    DeliveryDateTime DATETIME NOT NULL,
+    hasReturned BOOLEAN NOT NULL DEFAULT FALSE,
+    hasDamage BOOLEAN NOT NULL DEFAULT FALSE,
+    hadAccident BOOLEAN NOT NULL DEFAULT FALSE,
+    hasInsurance BOOLEAN NOT NULL,
+	TIN CHAR(9) NOT NULL,
+	VehicleID INT NOT NULL,
+    FOREIGN KEY (TIN) REFERENCES Customer(TIN),
+	FOREIGN KEY (VehicleID) REFERENCES Vehicle(VehicleID)
+);
+
+CREATE TABLE Car_Motorbike_Rental (
+    RentalID INT PRIMARY KEY REFERENCES Rental(RentalID),
+    DriverLicenseNumber CHAR(5) NOT NULL UNIQUE
+);
+
+CREATE TABLE Payment (
+    PaymentID INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+    Amount DECIMAL(10, 2) NOT NULL CHECK (Amount > 0),
+    RentalID INT NOT NULL,
+    FOREIGN KEY (RentalID) REFERENCES Rental(RentalID)
+);
+
+CREATE TABLE Driver (
+    TIN CHAR(9) NOT NULL PRIMARY KEY CHECK (TIN REGEXP '^[0-9]{9}$'),
+	BirthDate DATE NOT NULL,
+    RentalID INT NOT NULL,
+    FOREIGN KEY (RentalID) REFERENCES Rental(RentalID)
+);
